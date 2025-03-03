@@ -4,6 +4,7 @@ import TripForm from "./components/TripForm";
 // import TripList from "./components/TripList";
 import Home from "./components/Home";
 import DailyLogForm from "./components/DailyLogForm";
+import "./index.css";
 
 const App: React.FC = () => {
   return (
