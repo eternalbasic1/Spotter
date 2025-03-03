@@ -19,8 +19,8 @@ class DailyLog(models.Model):
     carrier_name = models.CharField(max_length=100, null=True, blank=True)
     office_address = models.TextField(null=True, blank=True)
     vehicle_details = models.CharField(max_length=100, null=True, blank=True)
-    duty_status = models.JSONField(null=True, blank=True)
+    duty_status = models.JSONField(default=list, blank=True)
     remarks = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"DailyLog {self.dailylogId} for Trip {self.trip.tripId}"  # ✅ Fixed tripId reference
+        return f"DailyLog {self.dailylogId} for Trip {self.trip.tripId}"
