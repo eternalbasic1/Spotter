@@ -15,7 +15,7 @@ interface DailyLog {
   carrier_name?: string;
   office_address?: string;
   vehicle_details?: string;
-  duty_status: DutyStatus; // ✅ Single JSON object instead of array
+  duty_status: DutyStatus[]; // ✅ Array of JSON objects
   remarks?: string;
   tripId: number;
 }
@@ -44,7 +44,7 @@ const DailyLogForm: React.FC = () => {
             carrier_name: "",
             office_address: "",
             vehicle_details: "",
-            duty_status: { status: "Off Duty", start_time: 0, end_time: 1 }, // ✅ Default JSON object
+            duty_status: [{ status: "offDuty", start_time: 0, end_time: 1 }], // ✅ Default array with one entry
             remarks: "",
             tripId: tripData.tripId,
           }))
@@ -72,19 +72,53 @@ const DailyLogForm: React.FC = () => {
   };
 
   const handleDutyStatusChange = (
-    index: number,
+    logIndex: number,
+    dutyIndex: number,
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setDailyLogs((prevLogs) =>
       prevLogs.map((log, i) =>
-        i === index
+        i === logIndex
           ? {
               ...log,
-              duty_status: {
+              duty_status: log.duty_status.map((duty, j) =>
+                j === dutyIndex
+                  ? {
+                      ...duty,
+                      [name]: name.includes("time") ? Number(value) : value,
+                    }
+                  : duty
+              ),
+            }
+          : log
+      )
+    );
+  };
+
+  const addDutyStatusEntry = (logIndex: number) => {
+    setDailyLogs((prevLogs) =>
+      prevLogs.map((log, i) =>
+        i === logIndex
+          ? {
+              ...log,
+              duty_status: [
                 ...log.duty_status,
-                [name]: name.includes("time") ? Number(value) : value, // ✅ Update only one JSON object
-              },
+                { status: "offDuty", start_time: 0, end_time: 1 },
+              ],
+            }
+          : log
+      )
+    );
+  };
+
+  const removeDutyStatusEntry = (logIndex: number, dutyIndex: number) => {
+    setDailyLogs((prevLogs) =>
+      prevLogs.map((log, i) =>
+        i === logIndex
+          ? {
+              ...log,
+              duty_status: log.duty_status.filter((_, j) => j !== dutyIndex),
             }
           : log
       )
@@ -119,13 +153,13 @@ const DailyLogForm: React.FC = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center bg-white">
+    <div className="w-screen h-screen flex justify-center items-center bg-white mt-50">
       <div className="bg-white shadow-lg rounded-lg p-6 max-w-2xl w-full">
         <h2 className="text-2xl font-semibold text-black text-center mb-6 mt-12">
           Enter Daily Logs
         </h2>
         <form onSubmit={submitDailyLogs} className="space-y-5">
-          {dailyLogs.map((_log, index) => (
+          {dailyLogs.map((log, index) => (
             <div
               key={index}
               className="border border-gray-300 rounded-lg p-4 mb-4"
@@ -139,7 +173,7 @@ const DailyLogForm: React.FC = () => {
                   name="date"
                   onChange={(e) => handleDailyLogChange(index, e)}
                   required
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                 />
                 <input
                   type="number"
@@ -147,7 +181,7 @@ const DailyLogForm: React.FC = () => {
                   placeholder="Total Miles Driven"
                   onChange={(e) => handleDailyLogChange(index, e)}
                   required
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                 />
                 <input
                   type="number"
@@ -155,57 +189,73 @@ const DailyLogForm: React.FC = () => {
                   placeholder="Total Mileage"
                   onChange={(e) => handleDailyLogChange(index, e)}
                   required
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full p-2 border border-gray-300 rounded-md"
                 />
 
-                {/* Duty Status (JSON Field) */}
                 <div className="col-span-2">
                   <h4 className="text-md font-medium">Duty Status</h4>
-                  <select
-                    name="status"
-                    value={dailyLogs[index].duty_status.status}
-                    onChange={(e) => handleDutyStatusChange(index, e)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  {log.duty_status.map((duty, dutyIndex) => (
+                    <div key={dutyIndex} className="mt-2 border p-3 rounded-md">
+                      <select
+                        name="status"
+                        value={duty.status}
+                        onChange={(e) =>
+                          handleDutyStatusChange(index, dutyIndex, e)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="offDuty">Off Duty</option>
+                        <option value="sleeperBerth">Sleeper Berth</option>
+                        <option value="driving">Driving</option>
+                        <option value="onDuty">On Duty</option>
+                      </select>
+                      <div className="flex gap-2 mt-2">
+                        <input
+                          type="number"
+                          name="start_time"
+                          min="0"
+                          max="24"
+                          value={duty.start_time}
+                          onChange={(e) =>
+                            handleDutyStatusChange(index, dutyIndex, e)
+                          }
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                        />
+                        <input
+                          type="number"
+                          name="end_time"
+                          min="0"
+                          max="24"
+                          value={duty.end_time}
+                          onChange={(e) =>
+                            handleDutyStatusChange(index, dutyIndex, e)
+                          }
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeDutyStatusEntry(index, dutyIndex)}
+                        className="text-red-500 mt-2"
+                      >
+                        Remove Entry
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addDutyStatusEntry(index)}
+                    className="text-blue-500 mt-2"
                   >
-                    <option>Off Duty</option>
-                    <option>Sleeper Berth</option>
-                    <option>Driving</option>
-                    <option>On Duty</option>
-                  </select>
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="number"
-                      name="start_time"
-                      min="0"
-                      max="24"
-                      value={dailyLogs[index].duty_status.start_time}
-                      onChange={(e) => handleDutyStatusChange(index, e)}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      name="end_time"
-                      min="0"
-                      max="24"
-                      value={dailyLogs[index].duty_status.end_time}
-                      onChange={(e) => handleDutyStatusChange(index, e)}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                    + Add Duty Status
+                  </button>
                 </div>
-
-                <textarea
-                  name="remarks"
-                  placeholder="Remarks"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
               </div>
             </div>
           ))}
           <button
             type="submit"
-            className="w-full bg-black text-white py-2 rounded-md font-medium hover:bg-gray-800 transition"
+            className="w-full bg-black text-white py-2 rounded-md"
           >
             Submit Daily Logs
           </button>
