@@ -77,6 +77,8 @@ const DailyLogForm: React.FC = () => {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    console.log(name, value);
+    console.log(typeof value);
     setDailyLogs((prevLogs) =>
       prevLogs.map((log, i) =>
         i === logIndex
@@ -86,7 +88,11 @@ const DailyLogForm: React.FC = () => {
                 j === dutyIndex
                   ? {
                       ...duty,
-                      [name]: name.includes("time") ? value : Number(value),
+                      [name]: name.includes("time")
+                        ? value === ""
+                          ? ""
+                          : Number(value)
+                        : value,
                     }
                   : duty
               ),
@@ -153,143 +159,150 @@ const DailyLogForm: React.FC = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center bg-white ">
-      <div className="bg-white shadow-lg rounded-lg p-6 max-w-3xl w-full mt-150">
-        <h2 className="text-2xl font-semibold text-black text-center mb-6 mt-12">
+    <div className="w-screen h-screen flex justify-center items-center bg-gray-100">
+      <div className="bg-white shadow-lg rounded-lg p-6 max-w-4xl w-full h-[80vh] flex flex-col">
+        <h2 className="text-2xl font-semibold text-black text-center mb-4">
           Enter Daily Logs
         </h2>
-        <form onSubmit={submitDailyLogs} className="space-y-5">
-          {dailyLogs.map((log, index) => (
-            <div
-              key={index}
-              className="border border-gray-300 rounded-lg p-4 mb-4"
-            >
-              <h3 className="text-lg font-medium text-black mb-3">
-                Day {index + 1}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="date"
-                  name="date"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="number"
-                  name="total_miles_driven"
-                  placeholder="Total Miles Driven"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="number"
-                  name="total_mileage"
-                  placeholder="Total Mileage"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="text"
-                  name="carrier_name"
-                  placeholder="Carrier Name"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="text"
-                  name="office_address"
-                  placeholder="Office Address"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="text"
-                  name="vehicle_details"
-                  placeholder="Vehicle Details"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
+        <div className="flex-1 overflow-y-auto p-2">
+          <form onSubmit={submitDailyLogs} className="space-y-5">
+            {dailyLogs.map((log, index) => (
+              <div
+                key={index}
+                className="border border-gray-300 rounded-lg p-4 mb-4"
+              >
+                <h3 className="text-lg font-medium text-black mb-3">
+                  Day {index + 1}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="date"
+                    name="date"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    required
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="number"
+                    name="total_miles_driven"
+                    placeholder="Total Miles Driven"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    required
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="number"
+                    name="total_mileage"
+                    placeholder="Total Mileage"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    required
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="carrier_name"
+                    placeholder="Carrier Name"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="office_address"
+                    placeholder="Office Address"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="vehicle_details"
+                    placeholder="Vehicle Details"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
 
-                {/* Duty Status */}
-                <div className="col-span-2">
-                  <h4 className="text-md font-medium">Duty Status</h4>
-                  {log.duty_status.map((duty, dutyIndex) => (
-                    <div key={dutyIndex} className="mt-2 border p-3 rounded-md">
-                      <select
-                        name="status"
-                        value={duty.status}
-                        onChange={(e) =>
-                          handleDutyStatusChange(index, dutyIndex, e)
-                        }
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                  {/* Duty Status */}
+                  <div className="col-span-2">
+                    <h4 className="text-md font-medium">Duty Status</h4>
+                    {log.duty_status.map((duty, dutyIndex) => (
+                      <div
+                        key={dutyIndex}
+                        className="mt-2 border p-3 rounded-md"
                       >
-                        <option value="offDuty">Off Duty</option>
-                        <option value="sleeperBerth">Sleeper Berth</option>
-                        <option value="driving">Driving</option>
-                        <option value="onDuty">On Duty</option>
-                      </select>
-                      <div className="flex gap-2 mt-2">
-                        <input
-                          type="number"
-                          name="start_time"
-                          placeholder="Start Time"
-                          min="0"
-                          max="24"
-                          value={duty.start_time}
+                        <select
+                          name="status"
+                          value={duty.status}
                           onChange={(e) =>
                             handleDutyStatusChange(index, dutyIndex, e)
                           }
                           className="w-full p-2 border border-gray-300 rounded-md"
-                        />
-                        <input
-                          type="number"
-                          name="end_time"
-                          placeholder="End Time"
-                          min="0"
-                          max="24"
-                          value={duty.end_time}
-                          onChange={(e) =>
-                            handleDutyStatusChange(index, dutyIndex, e)
+                        >
+                          <option value="offDuty">Off Duty</option>
+                          <option value="sleeperBerth">Sleeper Berth</option>
+                          <option value="driving">Driving</option>
+                          <option value="onDuty">On Duty</option>
+                        </select>
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="number"
+                            name="start_time"
+                            placeholder="Start Time"
+                            min="0"
+                            max="24"
+                            value={duty.start_time}
+                            onChange={(e) =>
+                              handleDutyStatusChange(index, dutyIndex, e)
+                            }
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                          />
+                          <input
+                            type="number"
+                            name="end_time"
+                            placeholder="End Time"
+                            min="0"
+                            max="24"
+                            value={duty.end_time}
+                            onChange={(e) =>
+                              handleDutyStatusChange(index, dutyIndex, e)
+                            }
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeDutyStatusEntry(index, dutyIndex)
                           }
-                          className="w-full p-2 border border-gray-300 rounded-md"
-                        />
+                          className="text-red-500 mt-2"
+                        >
+                          Remove Entry
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeDutyStatusEntry(index, dutyIndex)}
-                        className="text-red-500 mt-2"
-                      >
-                        Remove Entry
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => addDutyStatusEntry(index)}
-                    className="text-blue-500 mt-2"
-                  >
-                    + Add Duty Status
-                  </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addDutyStatusEntry(index)}
+                      className="text-blue-500 mt-2"
+                    >
+                      + Add Duty Status
+                    </button>
+                  </div>
+                  <textarea
+                    name="remarks"
+                    placeholder="Remarks"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
                 </div>
-                <textarea
-                  name="remarks"
-                  placeholder="Remarks"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
               </div>
-            </div>
-          ))}
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-2 rounded-md"
-          >
-            Submit Daily Logs
-          </button>
-        </form>
+            ))}
+            <button
+              type="submit"
+              className="w-full bg-black text-white py-2 rounded-md"
+            >
+              Submit Daily Logs
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
