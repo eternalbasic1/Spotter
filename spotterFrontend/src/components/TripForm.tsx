@@ -1,56 +1,95 @@
-import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import React, { useState, ChangeEvent, FormEvent } from "react";
 import { createTrip } from "../api";
+import "./styles.css"; // Import styles
+
+// Define the Trip interface
+interface Trip {
+  driver_name: string;
+  start_date: string;
+  num_days: number;
+  total_kilometer: number;
+}
 
 const TripForm: React.FC = () => {
-  const [form, setForm] = useState({
-    current_location: "",
-    pickup_location: "",
-    dropoff_location: "",
-    cycle_hours_used: "",
+  const navigate = useNavigate();
+  const [form, setForm] = useState<Trip>({
+    driver_name: "",
+    start_date: "",
+    num_days: 1,
+    total_kilometer: 0,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // Handle input changes
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]:
+        name === "num_days" || name === "total_kilometer"
+          ? Number(value)
+          : value,
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submission
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await createTrip(form);
-    alert("Trip created successfully!");
+    try {
+      const tripData = await createTrip(form);
+      localStorage.setItem("tripData", JSON.stringify(tripData));
+      navigate("/dailylog");
+    } catch (error) {
+      console.error("Error creating trip:", error);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        name="current_location"
-        placeholder="Current Location"
-        onChange={handleChange}
-        required
-      />
-      <input
-        type="text"
-        name="pickup_location"
-        placeholder="Pickup Location"
-        onChange={handleChange}
-        required
-      />
-      <input
-        type="text"
-        name="dropoff_location"
-        placeholder="Dropoff Location"
-        onChange={handleChange}
-        required
-      />
-      <input
-        type="number"
-        name="cycle_hours_used"
-        placeholder="Cycle Hours Used"
-        onChange={handleChange}
-        required
-      />
-      <button type="submit">Submit Trip</button>
-    </form>
+    <div className="card">
+      <div>
+        <h2 className="subtitle">Enter Trip Details</h2>
+        <form onSubmit={handleSubmit} className="form">
+          <input
+            type="text"
+            placeholder="Driver Name"
+            name="driver_name"
+            value={form.driver_name}
+            onChange={handleChange}
+            required
+            className="input"
+          />
+          <input
+            type="date"
+            name="start_date"
+            value={form.start_date}
+            onChange={handleChange}
+            required
+            className="input"
+          />
+          <input
+            type="number"
+            placeholder="Number of Days"
+            name="num_days"
+            value={form.num_days}
+            onChange={handleChange}
+            required
+            className="input"
+          />
+          <input
+            type="number"
+            placeholder="Total Kilometers"
+            name="total_kilometer"
+            value={form.total_kilometer}
+            onChange={handleChange}
+            required
+            className="input"
+          />
+          <button type="submit" className="button">
+            Submit Trip
+          </button>
+        </form>
+      </div>
+    </div>
   );
 };
 
