@@ -1,13 +1,18 @@
 from django.db import models
 
-# Create your models here.
-
 class Trip(models.Model):
-    current_location = models.CharField(max_length=255)
-    pickup_location = models.CharField(max_length=255)
-    dropoff_location = models.CharField(max_length=255)
-    cycle_hours_used = models.FloatField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    driver_name = models.CharField(max_length=100, null=True, blank=True)  # Can be NULL in DB and left blank in forms
+    start_date = models.DateField(null=False)  # Allows NULL values
+    num_days = models.IntegerField(null=False)
+    total_kilometer = models.FloatField(null=False)
 
-    def __str__(self):
-        return f"{self.current_location} to {self.dropoff_location}"
+class DailyLog(models.Model):
+    trip = models.ForeignKey(Trip, related_name="logs", on_delete=models.CASCADE)
+    date = models.DateField()
+    total_miles_driven = models.IntegerField()
+    total_mileage = models.IntegerField()
+    carrier_name = models.CharField(max_length=100, null=True, blank=True)
+    office_address = models.TextField(null=True, blank=True)
+    vehicle_details = models.CharField(max_length=100, null=True, blank=True)
+    duty_status = models.JSONField(null=True, blank=True)  # JSON field can be NULL
+    remarks = models.TextField(null=True, blank=True)
