@@ -5,16 +5,16 @@ from .models import Trip, DailyLog
 class DailyLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyLog
-        fields = "__all__"  # ✅ Includes duty_status as an array of JSON
+        fields = "__all__"  # Includes duty_status as an array of JSON
 
     def validate_duty_status(self, value):
         """
         Validate that duty_status is an array of JSON objects with valid statuses and time constraints.
         """
-        # ✅ Allowed status values
+        # Allowed status values
         VALID_STATUSES = {"onDuty", "offDuty", "sleeperBerth", "driving"}
 
-        # ✅ Ensure duty_status is a list
+        # Ensure duty_status is a list
         if not isinstance(value, list):
             raise serializers.ValidationError("Duty status must be a list of JSON objects.")
         
@@ -22,15 +22,15 @@ class DailyLogSerializer(serializers.ModelSerializer):
             if not isinstance(entry, dict):
                 raise serializers.ValidationError("Each duty status entry must be a JSON object.")
             
-            # ✅ Check if required keys exist
+            # Check if required keys exist
             if "status" not in entry or "start_time" not in entry or "end_time" not in entry:
                 raise serializers.ValidationError("Each duty status entry must contain 'status', 'start_time', and 'end_time'.")
             
-            # ✅ Validate status value
+            # Validate status value
             if entry["status"] not in VALID_STATUSES:
                 raise serializers.ValidationError(f"Invalid status '{entry['status']}'. Allowed values: {VALID_STATUSES}")
 
-            # ✅ Validate time constraints
+            # Validate time constraints
             if not (0 <= entry["start_time"] < 24) or not (0 <= entry["end_time"] <= 24):
                 raise serializers.ValidationError("Start and end times must be between 0 and 24 hours.")
             if entry["start_time"] >= entry["end_time"]:
@@ -39,7 +39,7 @@ class DailyLogSerializer(serializers.ModelSerializer):
         return value
 
 class TripSerializer(serializers.ModelSerializer):
-    logs = DailyLogSerializer(many=True, read_only=True)  # ✅ Read-only logs
+    logs = DailyLogSerializer(many=True, read_only=True)  # Read-only logs
 
     class Meta:
         model = Trip
