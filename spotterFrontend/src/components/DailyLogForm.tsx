@@ -4,8 +4,8 @@ import { getTripDetails, createDailyLog } from "../api";
 
 interface DutyStatus {
   status: string;
-  start_time: number;
-  end_time: number;
+  start_time: number | "";
+  end_time: number | "";
 }
 
 interface DailyLog {
@@ -31,7 +31,7 @@ const DailyLogForm: React.FC = () => {
       try {
         const tripData = await getTripDetails(Number(tripId));
 
-        if (!tripData || Object.keys(tripData).length === 0) {
+        if (!tripData) {
           setError("No Trip found with this ID.");
           return;
         }
@@ -44,7 +44,7 @@ const DailyLogForm: React.FC = () => {
             carrier_name: "",
             office_address: "",
             vehicle_details: "",
-            duty_status: [{ status: "offDuty", start_time: 0, end_time: 1 }], // ✅ Default array with one entry
+            duty_status: [{ status: "offDuty", start_time: "", end_time: "" }], // ✅ Default array
             remarks: "",
             tripId: tripData.tripId,
           }))
@@ -59,7 +59,7 @@ const DailyLogForm: React.FC = () => {
 
   const handleDailyLogChange = (
     index: number,
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setDailyLogs((prevLogs) =>
@@ -86,7 +86,7 @@ const DailyLogForm: React.FC = () => {
                 j === dutyIndex
                   ? {
                       ...duty,
-                      [name]: name.includes("time") ? Number(value) : value,
+                      [name]: name.includes("time") ? value : Number(value),
                     }
                   : duty
               ),
@@ -153,8 +153,8 @@ const DailyLogForm: React.FC = () => {
   }
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center bg-white mt-50">
-      <div className="bg-white shadow-lg rounded-lg p-6 max-w-2xl w-full">
+    <div className="w-screen h-screen flex justify-center items-center bg-white ">
+      <div className="bg-white shadow-lg rounded-lg p-6 max-w-3xl w-full mt-150">
         <h2 className="text-2xl font-semibold text-black text-center mb-6 mt-12">
           Enter Daily Logs
         </h2>
@@ -191,7 +191,29 @@ const DailyLogForm: React.FC = () => {
                   required
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
+                <input
+                  type="text"
+                  name="carrier_name"
+                  placeholder="Carrier Name"
+                  onChange={(e) => handleDailyLogChange(index, e)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+                <input
+                  type="text"
+                  name="office_address"
+                  placeholder="Office Address"
+                  onChange={(e) => handleDailyLogChange(index, e)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+                <input
+                  type="text"
+                  name="vehicle_details"
+                  placeholder="Vehicle Details"
+                  onChange={(e) => handleDailyLogChange(index, e)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
 
+                {/* Duty Status */}
                 <div className="col-span-2">
                   <h4 className="text-md font-medium">Duty Status</h4>
                   {log.duty_status.map((duty, dutyIndex) => (
@@ -213,6 +235,7 @@ const DailyLogForm: React.FC = () => {
                         <input
                           type="number"
                           name="start_time"
+                          placeholder="Start Time"
                           min="0"
                           max="24"
                           value={duty.start_time}
@@ -224,6 +247,7 @@ const DailyLogForm: React.FC = () => {
                         <input
                           type="number"
                           name="end_time"
+                          placeholder="End Time"
                           min="0"
                           max="24"
                           value={duty.end_time}
@@ -250,6 +274,12 @@ const DailyLogForm: React.FC = () => {
                     + Add Duty Status
                   </button>
                 </div>
+                <textarea
+                  name="remarks"
+                  placeholder="Remarks"
+                  onChange={(e) => handleDailyLogChange(index, e)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
               </div>
             </div>
           ))}
