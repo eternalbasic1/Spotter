@@ -18,3 +18,13 @@ export const createDailyLog = async (tripData: any) => {
   const response = await axios.post(DAILYLOG_URL, tripData);
   return response.data;
 };
+
+export const getTripDetails = async (tripId: number) => {
+  try {
+    const response = await axios.get(`${TRIPS_URL}${tripId}/`); // Assuming your backend follows RESTful convention
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching trip details for tripId ${tripId}:`, error);
+    throw error;
+  }
+};

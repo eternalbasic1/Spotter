@@ -1,6 +1,6 @@
-import React, { useState, ChangeEvent, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { createDailyLog } from "../api";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { getTripDetails, createDailyLog } from "../api";
 
 interface DailyLog {
   date: string;
@@ -15,18 +15,36 @@ interface DailyLog {
 }
 
 const DailyLogForm: React.FC = () => {
+  const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
-  const tripDataString = localStorage.getItem("tripData");
-  const tripData = tripDataString ? JSON.parse(tripDataString) : null;
+  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(
-    Array.from({ length: tripData?.num_days || 0 }, () => ({
-      date: "",
-      total_miles_driven: 0,
-      total_mileage: 0,
-      tripId: tripData?.tripId || 0,
-    }))
-  );
+  useEffect(() => {
+    const fetchTripData = async () => {
+      try {
+        const tripData = await getTripDetails(Number(tripId));
+
+        if (!tripData || Object.keys(tripData).length === 0) {
+          setError("No Trip found with this ID.");
+          return;
+        }
+
+        setDailyLogs(
+          Array.from({ length: tripData.num_days }, () => ({
+            date: "",
+            total_miles_driven: 0,
+            total_mileage: 0,
+            tripId: tripData.tripId,
+          }))
+        );
+      } catch (error) {
+        setError("No Trip exists with the given Trip ID.");
+      }
+    };
+
+    fetchTripData();
+  }, [tripId]);
 
   const handleDailyLogChange = (
     index: number,
@@ -54,6 +72,20 @@ const DailyLogForm: React.FC = () => {
       console.error("Error submitting daily logs:", error);
     }
   };
+
+  if (error) {
+    return (
+      <div className="w-screen h-screen flex flex-col justify-center items-center bg-white">
+        <p className="text-xl font-semibold text-red-600">{error}</p>
+        <button
+          onClick={() => navigate("/")}
+          className="mt-4 bg-black text-white py-2 px-4 rounded-md font-medium hover:bg-gray-800 transition"
+        >
+          Go Back to Home
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-screen h-screen flex justify-center items-center bg-white">
@@ -84,49 +116,6 @@ const DailyLogForm: React.FC = () => {
                   placeholder="Total Miles Driven"
                   onChange={(e) => handleDailyLogChange(index, e)}
                   required
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="number"
-                  name="total_mileage"
-                  placeholder="Total Mileage"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  required
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="carrier_name"
-                  placeholder="Carrier Name"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="office_address"
-                  placeholder="Office Address"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="vehicle_details"
-                  placeholder="Vehicle Details"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="duty_status"
-                  placeholder="Duty Status (JSON)"
-                  onChange={(e) => handleDailyLogChange(index, e)}
-                  className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="remarks"
-                  placeholder="Remarks"
-                  onChange={(e) => handleDailyLogChange(index, e)}
                   className="w-full p-2 border border-gray-300 text-black bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
