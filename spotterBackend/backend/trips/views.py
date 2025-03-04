@@ -11,6 +11,10 @@ import io
 import base64
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from docx import Document
+from docx.shared import Inches
+from docx2pdf import convert
+import tempfile
 
 
 class TripViewSet(viewsets.ModelViewSet):
@@ -21,16 +25,29 @@ class DailyLogViewSet(viewsets.ModelViewSet):
     queryset = DailyLog.objects.all()
     serializer_class = DailyLogSerializer
 
-def generate_dailylog_chart(request, dailylogId):
+
+
+from .models import DailyLog, Trip  # Import models
+
+def generate_dailylog_pdf(request, dailylogId):
+    # Fetch DailyLog and related Trip data
     daily_log = get_object_or_404(DailyLog, dailylogId=dailylogId)
+    trip = daily_log.tripId  # ForeignKey reference
+
+    driver_name = trip.driver_name
+    date = daily_log.date.strftime("%Y-%m-%d")
+    total_miles_driven = daily_log.total_miles_driven
+    total_mileage = daily_log.total_mileage
+    carrier_name = daily_log.carrier_name
+    vehicle_details = daily_log.vehicle_details
+
     duty_status_data = daily_log.duty_status  # Extract stored JSON field
-    print("duty_status_data", duty_status_data)
-    # Mapping statuses to numeric values for plotting
+
+    # **Generate Chart**
     status_mapping = {"onDuty": 2.5, "driving": 1.5, "sleeperBerth": 0.5, "offDuty": -0.5}
     activity_labels = ["On Duty", "Driving", "Sleeper Berth", "Off Duty"]
-    colors = ["#F9DCC4", "#F4A261", "#264653", "#2A9D8F"]  # Background colors
+    colors = ["#F9DCC4", "#F4A261", "#264653", "#2A9D8F"]
 
-    # Extracting times and corresponding activity values
     time = []
     activity = []
     for entry in duty_status_data:
@@ -39,48 +56,73 @@ def generate_dailylog_chart(request, dailylogId):
         time.append(entry["end_time"])
         activity.append(status_mapping[entry["status"]])
 
-    # Calculating total hours spent on each activity
-    activity_hours = [sum(entry["end_time"] - entry["start_time"] for entry in duty_status_data if entry["status"] == key) for key in status_mapping]
-
-    # Create figure
     fig, ax = plt.subplots(figsize=(12, 4))
-
-    # Fill background for each activity row
     for i in range(4):  
-        ax.fill_between([0, 24], i-1, i, color=colors[i], alpha=0.5)  # Entire row background
+        ax.fill_between([0, 24], i-1, i, color=colors[i], alpha=0.5)
 
-    # Step plot (on top of background)
     ax.step(time, activity, where='post', color='black', linewidth=2)
-
-    # Formatting
     ax.set_yticks([0, 1, 2, 3])
     ax.set_yticklabels(activity_labels, fontsize=12, weight="bold")
-
     ax.set_xticks(np.arange(0, 25, 1))
-    ax.xaxis.set_label_position("top")  # Move label to top
-    ax.xaxis.tick_top()  # Move tick labels to top
+    ax.xaxis.set_label_position("top")
+    ax.xaxis.tick_top()
     ax.set_xlabel("Time (Hours)", fontsize=12, weight="bold")
-
     ax.set_ylabel("Activity", fontsize=12, weight="bold")
     ax.set_title(f"Driver's Daily Log (ID: {dailylogId})")
     ax.grid(True, linestyle="--", alpha=0.6)
 
-    # Add total hours text on the right side
-    for i, hours in enumerate(activity_hours):
-        ax.text(24.05, i - 0.5, f"{hours:02}:00:00", fontsize=10, weight="bold", va="center", ha="left")
-
-    # Add "Total Hours" label at the top of the last column
-    ax.text(24.3, 3.4, "Total Hours", fontsize=8, weight="bold", ha="left")
-
-    # Adjust limits to fit the text
-    ax.set_xlim(0, 26)  # Extend right side for text spacing
-
-    # Save plot to a BytesIO object
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
     plt.close(fig)
     buffer.seek(0)
-    # plt.savefig("finalize.png", dpi=300, bbox_inches='tight')
 
+    # **Load Existing .docx Template**
+    doc = Document("/Users/kancharakuntlavineethreddy/Developer/Vscode/Spotter/spotterBackend/backend/trips/log_template.docx")
 
-    return HttpResponse(buffer.getvalue(), content_type='image/png')
+    replacements = {
+        "DRIVER_NAME": driver_name,
+        "DATE": date,
+        "TOTAL_MILES_DRIVEN": str(total_miles_driven),
+        "TOTAL_MILEAGE": str(total_mileage),
+        "CARRIER_NAME": carrier_name,
+        "VEHICLE_DETAILS": vehicle_details
+    }
+
+    # **Replace Text Placeholders**
+    for paragraph in doc.paragraphs:
+        for key, value in replacements.items():
+            if key in paragraph.text:
+                paragraph.text = paragraph.text.replace(key, value)
+
+    # **Replace Table Cells (if placeholders exist in tables)**
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for key, value in replacements.items():
+                    if key in cell.text:
+                        cell.text = cell.text.replace(key, value)
+
+    # **Find and Replace GENERATED_IMAGE Placeholder with Image**
+    for paragraph in doc.paragraphs:
+        if "GENERATED_IMAGE" in paragraph.text:
+            paragraph.text = paragraph.text.replace("GENERATED_IMAGE", "")  # Remove the placeholder
+            run = paragraph.add_run()  # Create a new run to hold the image
+            image_stream = io.BytesIO(buffer.getvalue())
+            run.add_picture(image_stream, width=Inches(6))  # Insert image
+
+    # **Save .docx Temporarily**
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_docx:
+        doc.save(temp_docx.name)
+        temp_docx_path = temp_docx.name
+
+    # **Convert .docx to PDF**
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
+        convert(temp_docx_path, temp_pdf.name)
+        temp_pdf_path = temp_pdf.name
+
+    # **Read PDF and Return as Response**
+    with open(temp_pdf_path, "rb") as pdf_file:
+        response = HttpResponse(pdf_file.read(), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="daily_log_{dailylogId}.pdf"'
+    
+    return response
