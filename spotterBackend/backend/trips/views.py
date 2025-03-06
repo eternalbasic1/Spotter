@@ -1,3 +1,4 @@
+import subprocess
 from rest_framework import viewsets
 from .models import Trip, DailyLog
 from .serializers import TripSerializer, DailyLogSerializer
@@ -15,6 +16,7 @@ from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
 import tempfile
+import os
 
 
 class TripViewSet(viewsets.ModelViewSet):
@@ -77,7 +79,7 @@ def generate_dailylog_pdf(request, dailylogId):
     buffer.seek(0)
 
     # **Load Existing .docx Template**
-    doc = Document("/Users/kancharakuntlavineethreddy/Developer/Vscode/Spotter/spotterBackend/backend/trips/log_template.docx")
+    doc = Document("/Users/kancharakuntlavineethreddy/Developer/Vscode/Spotter/spotterBackend/backend/trips/testing.docx")
 
     replacements = {
         "DRIVER_NAME": driver_name,
@@ -88,11 +90,25 @@ def generate_dailylog_pdf(request, dailylogId):
         "VEHICLE_DETAILS": vehicle_details
     }
 
+    print("REPLACEMENTSS", replacements)
     # **Replace Text Placeholders**
+    # for paragraph in doc.paragraphs:
+    #     print("paragraph", paragraph.text)
+    #     for key, value in replacements.items():
+    #         if key in paragraph.text:
+    #             print("KEEEY, VALUEE", key, value)
+    #             paragraph.text = paragraph.text.replace(key, value)
+
     for paragraph in doc.paragraphs:
+        print("paragraph", paragraph.text)
         for key, value in replacements.items():
             if key in paragraph.text:
+                print("KEEEY, VALUEE", key, value)
                 paragraph.text = paragraph.text.replace(key, value)
+
+        for run in paragraph.runs:
+            if "STATUS" in run.text:
+                run.text = run.text.replace("STATUS", "status_worked")
 
     # **Replace Table Cells (if placeholders exist in tables)**
     for table in doc.tables:
@@ -115,14 +131,78 @@ def generate_dailylog_pdf(request, dailylogId):
         doc.save(temp_docx.name)
         temp_docx_path = temp_docx.name
 
-    # **Convert .docx to PDF**
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-        convert(temp_docx_path, temp_pdf.name)
-        temp_pdf_path = temp_pdf.name
+    # **Convert .docx to PDF using LibreOffice**
+    output_pdf_path = temp_docx_path.replace(".docx", ".pdf")
+    try:
+        subprocess.run([
+            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+            "--headless", "--convert-to", "pdf", temp_docx_path, "--outdir", os.path.dirname(temp_docx_path)
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        return HttpResponse(f"❌ PDF Conversion Failed: {e}", status=500)
 
     # **Read PDF and Return as Response**
+    if os.path.exists(output_pdf_path):
+        with open(output_pdf_path, "rb") as pdf_file:
+            response = HttpResponse(pdf_file.read(), content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="daily_log_{dailylogId}.pdf"'
+        
+        # Cleanup temporary files
+        os.remove(temp_docx_path)
+        os.remove(output_pdf_path)
+
+        return response
+    else:
+        return HttpResponse("❌ PDF file not found!", status=500)
+    
+
+#TODO: TESTING 
+
+
+
+
+# Path to input template (Change this to your actual file location)
+DOCX_TEMPLATE = "/Users/kancharakuntlavineethreddy/Developer/Vscode/Spotter/spotterBackend/backend/trips/log_template.docx"
+
+def replace_and_generate_pdf(request):
+    """Replaces 'STATUS' with 'status_worked', converts to PDF, and sends the response."""
+
+    # Load the original .docx file
+    doc = Document(DOCX_TEMPLATE)
+
+    # Replace 'STATUS' with 'status_worked'
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            if "STATUS" in run.text:
+                run.text = run.text.replace("GENERATED_IMAGE", "Itundhaaa")
+
+    # Save the modified .docx to a temp file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_docx:
+        temp_docx_path = temp_docx.name
+        doc.save(temp_docx_path)
+
+    # Convert DOCX to PDF using LibreOffice
+    output_dir = os.path.dirname(temp_docx_path)
+    subprocess.run([
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+        "--headless", "--convert-to", "pdf", temp_docx_path, "--outdir", output_dir
+    ], check=True)
+
+    # Get the converted PDF path
+    temp_pdf_path = temp_docx_path.replace(".docx", ".pdf")
+
+    # Read the PDF and return it as response
     with open(temp_pdf_path, "rb") as pdf_file:
         response = HttpResponse(pdf_file.read(), content_type="application/pdf")
-        response["Content-Disposition"] = f'attachment; filename="daily_log_{dailylogId}.pdf"'
-    
+        response["Content-Disposition"] = 'attachment; filename="updated_status.pdf"'
+
+    # Cleanup temporary files
+    os.remove(temp_docx_path)
+    os.remove(temp_pdf_path)
+
     return response
+
+
+def test_view(request):
+    """A simple test route to verify the server is working."""
+    return HttpResponse("✅ Django server is running fine!", content_type="text/plain")
