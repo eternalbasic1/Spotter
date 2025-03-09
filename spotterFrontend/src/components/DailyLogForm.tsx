@@ -15,6 +15,10 @@ interface DailyLog {
   carrier_name?: string;
   office_address?: string;
   vehicle_details?: string;
+  from_address?: string;
+  to_address?: string;
+  main_office_address?: string;
+  home_terminal_address?: string;
   duty_status: DutyStatus[]; // ✅ Array of JSON objects
   remarks?: string;
   tripId: number;
@@ -44,6 +48,10 @@ const DailyLogForm: React.FC = () => {
             carrier_name: "",
             office_address: "",
             vehicle_details: "",
+            from_address: "",
+            to_address: "",
+            main_office_address: "",
+            home_terminal_address: "",
             duty_status: [{ status: "offDuty", start_time: "", end_time: "" }], // ✅ Default array
             remarks: "",
             tripId: tripData.tripId,
@@ -216,6 +224,34 @@ const DailyLogForm: React.FC = () => {
                     type="text"
                     name="vehicle_details"
                     placeholder="Vehicle Details"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="from_address"
+                    placeholder="From Address"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="to_address"
+                    placeholder="To Address"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="main_office_address"
+                    placeholder="Main Office Address"
+                    onChange={(e) => handleDailyLogChange(index, e)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="text"
+                    name="home_terminal_address"
+                    placeholder="Home Terminal Address"
                     onChange={(e) => handleDailyLogChange(index, e)}
                     className="w-full p-2 border border-gray-300 rounded-md"
                   />

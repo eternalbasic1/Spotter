@@ -51,9 +51,14 @@ def generate_trip_pdfs(request, trip_id):
         carrier_name = daily_log.carrier_name
         vehicle_details = daily_log.vehicle_details
         duty_status_data = daily_log.duty_status  # Extract stored JSON field
+        from_address = daily_log.from_address
+        to_address = daily_log.to_address
+        home_terminal_address = daily_log.home_terminal_address
+        main_office_address = daily_log.main_office_address
+        remarks = daily_log.remarks
 
         # **Generate Chart**
-        status_mapping = {"onDuty": 2.5, "driving": 1.5, "sleeperBerth": 0.5, "offDuty": -0.5}
+        status_mapping = {"onDuty": -0.5, "driving": 0.5,  "sleeperBerth": 1.5,  "offDuty": 2.5  }
         activity_labels = ["On Duty", "Driving", "Sleeper Berth", "Off Duty"]
         colors = ["#F9DCC4", "#F4A261", "#264653", "#2A9D8F"]
 
@@ -96,7 +101,12 @@ def generate_trip_pdfs(request, trip_id):
             "TOTAL_MILES_DRIVEN": str(total_miles_driven),
             "TOTAL_MILEAGE": str(total_mileage),
             "CARRIER_NAME": carrier_name,
-            "VEHICLE_DETAILS": vehicle_details
+            "VEHICLE_DETAILS": vehicle_details,
+            "FROM_ADDRESS": from_address,
+            "TO_ADDRESS": to_address,
+            "MAIN_OFFICE_ADDRESS": main_office_address,
+            "HOME_TERMINAL_ADDRESS": home_terminal_address,
+            "ANY_REMARKS": remarks
         }
 
         # **Replace Text Placeholders**
