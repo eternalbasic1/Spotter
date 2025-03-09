@@ -2,6 +2,7 @@ import subprocess
 from rest_framework import viewsets
 from .models import Trip, DailyLog
 from .serializers import TripSerializer, DailyLogSerializer
+from django.http import JsonResponse
 
 import matplotlib
 matplotlib.use('Agg')
@@ -187,3 +188,9 @@ def generate_trip_pdfs(request, trip_id):
     os.remove(zip_path)
 
     return response
+
+
+
+def health_check(request):
+    # You can include additional health checks here
+    return JsonResponse({"status": "ok", "message": "Service is operational"}, status=200)
