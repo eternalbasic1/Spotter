@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getHealth } from "../api";
 
 const Home: React.FC = () => {
-  const [loading, setLoading] = useState(true); // Start with loading as true
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHealth = async () => {
