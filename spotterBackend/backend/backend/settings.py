@@ -28,7 +28,6 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "spotter-f9ok.onrender.com",
     "spotter-1.onrender.com",
-    "triplogger-five.vercel.app",
     "localhost",
     "127.0.0.1"
 ]
@@ -133,4 +132,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]  # Allow React frontend
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Localhost for development
+    "https://triplogger-five.vercel.app"  # Vercel deployment
+]
