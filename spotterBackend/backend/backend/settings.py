@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "spotter-f9ok.onrender.com",
+    "spotter-1.onrender.com",
     "localhost",
     "127.0.0.1"
 ]

@@ -19,7 +19,7 @@ interface DailyLog {
   to_address?: string;
   main_office_address?: string;
   home_terminal_address?: string;
-  duty_status: DutyStatus[]; // ✅ Array of JSON objects
+  duty_status: DutyStatus[]; // Array of JSON objects
   remarks?: string;
   tripId: number;
 }
@@ -52,7 +52,7 @@ const DailyLogForm: React.FC = () => {
             to_address: "",
             main_office_address: "",
             home_terminal_address: "",
-            duty_status: [{ status: "offDuty", start_time: "", end_time: "" }], // ✅ Default array
+            duty_status: [{ status: "offDuty", start_time: "", end_time: "" }], //  Default array
             remarks: "",
             tripId: tripData.tripId,
           }))

@@ -7,13 +7,17 @@ interface GenerateTripPDFProps {
 
 const GenerateTripPDF: React.FC<GenerateTripPDFProps> = ({ tripId }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDownload = async () => {
     setLoading(true);
+    setError(null); // Clear error when retrying
+
     try {
       await generateTripPDF(parseInt(tripId)); // Convert string to number
-    } catch (error) {
-      console.error("Error generating trip PDF:", error);
+    } catch (err) {
+      console.error("Error generating trip PDF:", err);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -26,6 +30,7 @@ const GenerateTripPDF: React.FC<GenerateTripPDFProps> = ({ tripId }) => {
         <p className="text-gray-600">
           Click the button below to generate and download the trip ZIP file.
         </p>
+
         <button
           onClick={handleDownload}
           className="mt-4 px-5 py-2 text-white bg-blue-500 rounded-md flex items-center justify-center gap-2 disabled:opacity-50 mx-auto"
@@ -37,6 +42,11 @@ const GenerateTripPDF: React.FC<GenerateTripPDFProps> = ({ tripId }) => {
             "Download ZIP"
           )}
         </button>
+
+        {/* Error message below the button */}
+        {error && (
+          <p className="mt-3 text-red-500 text-sm font-medium">{error}</p>
+        )}
       </div>
     </div>
   );

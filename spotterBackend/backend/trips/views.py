@@ -2,6 +2,7 @@ import subprocess
 from rest_framework import viewsets
 from .models import Trip, DailyLog
 from .serializers import TripSerializer, DailyLogSerializer
+from django.http import JsonResponse
 
 import matplotlib
 matplotlib.use('Agg')
@@ -48,7 +49,7 @@ def get_libreoffice_executable():
 
 def generate_trip_pdfs(request, trip_id):
     # Fetch all DailyLogs associated with the given trip_id
-    daily_logs = DailyLog.objects.filter(tripId=trip_id)  # ✅ Fixed Foreign Key reference
+    daily_logs = DailyLog.objects.filter(tripId=trip_id)  #  Fixed Foreign Key reference
 
     if not daily_logs.exists():
         return HttpResponse("No daily logs found for the given trip ID", status=404)
@@ -58,7 +59,7 @@ def generate_trip_pdfs(request, trip_id):
 
     for daily_log in daily_logs:
         dailylogId = daily_log.dailylogId
-        trip = daily_log.tripId  # ✅ Fixed Foreign Key reference
+        trip = daily_log.tripId  #  Fixed Foreign Key reference
 
         driver_name = trip.driver_name
         date = daily_log.date.strftime("%Y-%m-%d")
@@ -108,8 +109,8 @@ def generate_trip_pdfs(request, trip_id):
 
         # **Load Existing .docx Template (Use Django Settings)**
         from django.conf import settings
-        doc_template_path = os.path.join(settings.BASE_DIR, "trips/testing.docx")
-        doc = Document(doc_template_path)  # ✅ Fixed Hardcoded Path
+        doc_template_path = os.path.join(settings.BASE_DIR, "trips/tripLogGenerater.docx")
+        doc = Document(doc_template_path)  #  Fixed Hardcoded Path
 
         replacements = {
             "DRIVER_NAME": str(driver_name) if driver_name else "",
@@ -125,7 +126,6 @@ def generate_trip_pdfs(request, trip_id):
             "ANY_REMARKS": str(remarks) if remarks else ""
         }
 
-        print("sys.platform", sys.platform)
         # **Replace Text Placeholders**
         for paragraph in doc.paragraphs:
             for key, value in replacements.items():
@@ -154,12 +154,7 @@ def generate_trip_pdfs(request, trip_id):
 
         # **Convert .docx to PDF**
         output_pdf_path = temp_docx_path.replace(".docx", ".pdf")
-        # libreoffice_exec = '/Applications/LibreOffice.app/Contents/MacOS/soffice'
-        # print("OS NAME", os.name)
-        # if os.name == 'posix':  # Linux/Unix/Mac OS X
-        #     libreoffice_exec = '/usr/local/bin/libreoffice'  # Typical path on Linux
-    
-        # print("libreoffice_exec", libreoffice_exec)
+   
         libreoffice_exec = get_libreoffice_executable()
         try:
             subprocess.run([
@@ -168,7 +163,7 @@ def generate_trip_pdfs(request, trip_id):
             ], check=True)
             pdf_paths.append(output_pdf_path)
         except subprocess.CalledProcessError as e:
-            return HttpResponse(f"❌ PDF Conversion Failed: {e}", status=500)
+            return HttpResponse(f" PDF Conversion Failed: {e}", status=500)
 
     # **Create a ZIP file containing all PDFs**
     zip_path = os.path.join(temp_dir, f"trip_{trip_id}_dailylogs.zip")
@@ -187,3 +182,9 @@ def generate_trip_pdfs(request, trip_id):
     os.remove(zip_path)
 
     return response
+
+
+
+def health_check(request):
+    # You can include additional health checks here
+    return JsonResponse({"status": "ok", "message": "Service is operational"}, status=200)
