@@ -18,6 +18,7 @@ from docx2pdf import convert
 import tempfile
 import os
 import zipfile
+import sys
 
 
 
@@ -28,6 +29,21 @@ class TripViewSet(viewsets.ModelViewSet):
 class DailyLogViewSet(viewsets.ModelViewSet):
     queryset = DailyLog.objects.all()
     serializer_class = DailyLogSerializer
+
+def get_libreoffice_executable():
+    if sys.platform.startswith('linux'):
+        # Check common Linux paths
+        paths = [
+            '/usr/bin/libreoffice',
+            '/usr/local/bin/libreoffice',
+        ]
+        for path in paths:
+            if os.path.exists(path):
+                return path
+    elif sys.platform == 'darwin':  # macOS
+        return '/Applications/LibreOffice.app/Contents/MacOS/soffice'
+
+    return None  # LibreOffice not found
 
 
 def generate_trip_pdfs(request, trip_id):
@@ -96,19 +112,20 @@ def generate_trip_pdfs(request, trip_id):
         doc = Document(doc_template_path)  # ✅ Fixed Hardcoded Path
 
         replacements = {
-            "DRIVER_NAME": driver_name,
+            "DRIVER_NAME": str(driver_name) if driver_name else "",
             "DATE": date,
-            "TOTAL_MILES_DRIVEN": str(total_miles_driven),
-            "TOTAL_MILEAGE": str(total_mileage),
-            "CARRIER_NAME": carrier_name,
-            "VEHICLE_DETAILS": vehicle_details,
-            "FROM_ADDRESS": from_address,
-            "TO_ADDRESS": to_address,
-            "MAIN_OFFICE_ADDRESS": main_office_address,
-            "HOME_TERMINAL_ADDRESS": home_terminal_address,
-            "ANY_REMARKS": remarks
+            "TOTAL_MILES_DRIVEN": str(total_miles_driven) if total_miles_driven else "0",
+            "TOTAL_MILEAGE": str(total_mileage) if total_mileage else "0",
+            "CARRIER_NAME": str(carrier_name) if carrier_name else "",
+            "VEHICLE_DETAILS": str(vehicle_details) if vehicle_details else "",
+            "FROM_ADDRESS": str(from_address) if from_address else "",
+            "TO_ADDRESS": str(to_address) if to_address else "",
+            "MAIN_OFFICE_ADDRESS": str(main_office_address) if main_office_address else "",
+            "HOME_TERMINAL_ADDRESS": str(home_terminal_address) if home_terminal_address else "",
+            "ANY_REMARKS": str(remarks) if remarks else ""
         }
 
+        print("sys.platform", sys.platform)
         # **Replace Text Placeholders**
         for paragraph in doc.paragraphs:
             for key, value in replacements.items():
@@ -137,9 +154,16 @@ def generate_trip_pdfs(request, trip_id):
 
         # **Convert .docx to PDF**
         output_pdf_path = temp_docx_path.replace(".docx", ".pdf")
+        # libreoffice_exec = '/Applications/LibreOffice.app/Contents/MacOS/soffice'
+        # print("OS NAME", os.name)
+        # if os.name == 'posix':  # Linux/Unix/Mac OS X
+        #     libreoffice_exec = '/usr/local/bin/libreoffice'  # Typical path on Linux
+    
+        # print("libreoffice_exec", libreoffice_exec)
+        libreoffice_exec = get_libreoffice_executable()
         try:
             subprocess.run([
-                "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+                libreoffice_exec,
                 "--headless", "--convert-to", "pdf", temp_docx_path, "--outdir", temp_dir
             ], check=True)
             pdf_paths.append(output_pdf_path)
