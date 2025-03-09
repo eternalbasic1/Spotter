@@ -1,1 +1,10 @@
 venv
+
+# Python/Django specific ignores
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+venv/
+.env
+.DS_Store
