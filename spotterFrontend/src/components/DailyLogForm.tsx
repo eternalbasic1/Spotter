@@ -146,7 +146,7 @@ const DailyLogForm: React.FC = () => {
         await createDailyLog(log);
       }
       alert("Daily logs submitted successfully!");
-      navigate("/");
+      navigate(`/generate/${tripId}`);
     } catch (error) {
       console.error("Error submitting daily logs:", error);
     }
